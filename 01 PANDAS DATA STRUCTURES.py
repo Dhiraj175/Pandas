@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import random
 
 # Pandas has two fundamental data structures: Series and dataframe
 
@@ -80,6 +81,43 @@ print(df.iloc[1]) # row
 
 print(f"Sample: {df.shape[0]}")  # sample rows
 print(f"Feature: {df.shape[1]}")  # feature column
+
+
+# from list of dict
+data = [
+    {"Name": "Alice", "Age": 25, "City": "New York"},
+    {"Name": "Bob", "Age": 30, "City": "London"},
+    {"Name": "Charlie", "Age": 35, "City": "Paris"}
+]
+df = pd.DataFrame(data)
+print(df)
+
+
+# from list of list
+data = [
+    ["Alice", 25, "New York"],
+    ["Bob", 30, "London"],
+    ["Charlie", 35, "Paris"]
+]
+df = pd.DataFrame(data,index=["S1","S2","S3"],columns=["Name","Age","City"])
+print(df)
+
+
+# from numpy Array
+arr = np.random.rand(3,4)
+df = pd.DataFrame(arr,columns=["F1","F2","F3","F4"])
+print(df)
+
+
+## Advanced DataFrame Creation
+# Specifying dtypes
+data = {"Zip code":[443402,441405,411045,411069],
+        "Price": [4104,1560,4803,7914]}
+df = pd.DataFrame(data)
+df = df.astype({"Zip code":"object","Price":"int64"}) # zipcode dtype force to object
+print(df.dtypes)
+
+
 
 # index alignment
 # s1 = pd.Series([10, 20, 30], index=["a", "b", "c"])
@@ -277,4 +315,16 @@ print(df.describe())
 # 7. Convert only the input features to a NumPy array. What shape is it?
 study_hours_numpy = df[["study_hours","attendance_pct"]].to_numpy()
 print(study_hours_numpy.shape)
-# 8. Convert the target to a NumPy array. What shape is it?
+
+
+
+## Exercise 
+user_ids = np.arange(1,101)
+user_scores = [random.randint(20,101) for _ in range(100)]
+user_metadata = {i: random.choice(["Free","Premium"]) for i in range(1,101)}
+df = pd.DataFrame({
+    "user_ids": user_ids,
+    "user_scores": user_scores,
+    "status": [user_metadata[i] for i in user_ids]
+})
+print(df.head(5))
