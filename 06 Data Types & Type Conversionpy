@@ -1,0 +1,155 @@
+import pandas as pd
+import numpy as np
+import random
+import re
+
+# Int to Float / Float to Int:
+data = {
+    'Age': [25, 30, 35],
+    'Salary': [50000.5, 60000.0, 75000.2],
+    'Name': ['Alice', 'Bob', 'Charlie'],
+    'Is_Manager': [False, True, False]
+}
+df = pd.DataFrame(data)
+df["Age"] = df['Age'].astype("float16")
+df["Salary"] = df['Salary'].astype("int64")
+print(df.dtypes)
+
+
+# Smart Numeric Conversion: pd.to_numeric()
+s = pd.Series(["10", "20", "30","Komal"])
+s = pd.to_numeric(s,errors="coerce")
+print(s)
+# - 'raise' (Default): Crash if invalid parsing occurs.
+# - 'coerce': If it encounters a value it can't convert (like "apple"), it turns it into NaN (Missing Data) and converts the rest of the column to floats!
+# - 'ignore': Returns the original input if it fails.
+
+
+# bool & boolean
+# s = pd.Series([True,False,True,None])
+s = pd.Series([True,False,True,None],dtype="boolean")
+# s = s.astype("boolean")
+print(s)
+
+
+## Category
+s_large = pd.Series(["Apple", "Banana", "Cherry"] * 1000000)
+s_large = s_large.astype("category")
+print(s_large.memory_usage(deep=True)/1024**2)
+
+
+
+## Nullable Integer Types (Int64) 
+# Pandas introduced Nullable Integer types, denoted with a capital "I": Int8, Int16, Int32, Int64. These can hold integers AND missing values (pd.NA) without converting to floats.
+s_int_nan = pd.Series([1, 2, np.nan],dtype="Int64")
+print(s_int_nan)
+
+
+## Automatic Smart Conversion: convert_dtypes()
+df_messy = pd.DataFrame({
+    'A': pd.Series([1, 2, 3], dtype='int64'),
+    'B': pd.Series(['a', 'b', 'c'], dtype='object'),
+    'C': pd.Series([True, False, np.nan], dtype='object')
+})
+
+df_messy = df_messy.convert_dtypes()
+print(df_messy.dtypes)
+
+
+
+
+
+#=====================================================
+# practice 
+#=====================================================
+
+# Exercise 1:
+s = pd.Series(['1', '2', '3'])
+# Convert it to a 64-bit float type using astype()
+s = s.astype("float64")
+print(s)
+
+# Exercise 2:
+# You load a dataset containing a column called "Status" which only contains the words "Active", "Inactive", and "Suspended". The dataset has 10 million rows. How do you reduce the memory footprint of this column?
+status = pd.DataFrame({
+    "status": [random.choice(["Active","Inactive","Suspended"]) for _ in range(100000)],
+    "ID": range(100000)
+})
+# status = status.astype("category")
+# print(status.memory_usage(deep=True)/1024**2)
+
+
+## Exercise 3:
+s = pd.Series(["100", "200", "Error", "400"])
+# Use the correct function to convert this to numeric, ensuring the "Error" string becomes missing data rather than crashing the program.
+s = pd.to_numeric(s,errors="coerce")
+print(s)
+
+
+## Exercise 4:
+# Write a function optimize_for_ml(df) that:
+# 1. Converts all object columns that contain strings to the category dtype.
+# 2. Converts all standard int64 and float64 to float32 to save memory for Neural Networks.
+def optimize_for_ml(df):
+    for col in df.columns:
+        if df[col].dtype == "object":
+            df[col] = df[col].astype("category")
+        elif df[col].dtype in ["int64","float64"]:
+            df[col] = df[col].astype("float32")
+    return df
+st = optimize_for_ml(status)
+print(st.dtypes)
+
+
+## Exercise 4:
+housing = pd.DataFrame({
+    'Beds': ['3', '4', 'Unknown', '2'],
+    'Price': ['$500000', '$600000', '$750000', '$400000'],
+    'Type': ['House', 'Condo', 'House', 'House']
+})
+
+# 1. Convert Beds to numeric, setting 'Unknown' to NaN. Use a nullable integer type so it doesn't become a float.
+housing["Beds"] = pd.to_numeric(housing["Beds"],errors="coerce").astype("Int32")
+
+
+# 2. Clean Price by removing the '$' sign, then convert it to an integer.
+housing["Price"] = housing["Price"].str.replace("$","").astype("int64")
+
+
+# 3. Convert Type to a category.
+housing["Type"] = housing["Type"].astype("category")
+print(housing.dtypes)
+
+
+## Mini-Project: Memory Optimizer
+# Scenario: You are a Data Engineer prepping a massive log file for Data Scientists.
+# 1. Create a mock DataFrame with 500,000 rows.
+# - Column 'User_ID': Integers from 1 to 500000.
+# - Column 'Action': Randomly choose between ["Click", "View", "Purchase"].
+# - Column 'Score': Random strings of numbers (e.g. "95", "82", "BadData").
+
+user_ID = range(1,500001)
+actions = np.random.choice(["Click", "View", "Purchase"],size=500000)
+score = np.random.randint(1,101,size=500000).astype("str")
+bad_idx = np.random.choice(500000,5000,replace=False)
+score[bad_idx] = "BadData"
+df = pd.DataFrame({
+    "User_ID": user_ID,
+    "Action":actions,
+    "Score":score
+})
+
+# 2. Check the memory usage (df.memory_usage(deep=True).sum() / 1024**2 MB).
+memory_usage_beore_otimize = df.memory_usage().sum()/1024**2
+print(memory_usage_beore_otimize)
+
+# 3. Convert 'Action' to category.
+df["Action"] = df["Action"].astype("category")
+print(df.memory_usage().sum()/1024**2)
+
+# 4. Convert 'Score' to numeric using coerce.
+df["Score"] = pd.to_numeric(df["Score"],errors="coerce")
+
+# 5. Check memory usage again. Calculate the percentage saved.
+memory_usage_after_otimize= df.memory_usage().sum()/1024**2
+print(f"Memory Usage: {memory_usage_after_otimize}MB\nSaved memoery: {((memory_usage_beore_otimize-memory_usage_after_otimize)/memory_usage_beore_otimize)*100}")
